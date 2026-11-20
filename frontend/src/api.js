@@ -31,7 +31,17 @@ export const api = {
     return req('/variances' + (s ? `?${s}` : ''))
   },
   setFate: (id, fate) => req(`/variances/${id}/fate`, { method: 'POST', body: JSON.stringify({ fate }) }),
-  seal: (body) => req('/seal', { method: 'POST', body: JSON.stringify(body) }),
+  // 整单封印：一次工单勾选多个账期，服务端整单处理（非前端循环单期）
+  createSealOrder: (periodIds) => req('/seal-orders', { method: 'POST', body: JSON.stringify({ period_ids: periodIds }) }),
+  submitSealOrder: (orderId) => req(`/seal-orders/${orderId}/submit`, { method: 'POST' }),
+  sealOrders: () => req('/seal-orders'),
+  sealOrder: (orderId) => req(`/seal-orders/${orderId}`),
+  sealOrderFailures: (orderId) => req(`/seal-orders/${orderId}/failures`),
+  sealOrderAudit: (orderId) => req(`/seal-orders/${orderId}/audit`),
+  sealPolicy: () => req('/seal-policy'),
+  putSealPolicy: (policy) => req('/seal-policy', { method: 'PUT', body: JSON.stringify({ policy }) }),
+  leases: () => req('/leases'),
+  sealBatches: () => req('/seal-batches'),
   settings: () => req('/settings'),
   putSetting: (key, value) => req(`/settings/${key}`, { method: 'PUT', body: JSON.stringify({ value }) }),
 }

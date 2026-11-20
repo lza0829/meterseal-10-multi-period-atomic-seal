@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { api } from '../api'
-import { 批状态, 标 } from '../labels'
+import { 批状态, 工单状态, 标 } from '../labels'
 const data = ref(null)
 const err = ref('')
 onMounted(async () => {
@@ -11,7 +11,7 @@ onMounted(async () => {
 <template>
   <div>
     <h1>总览</h1>
-    <p class="sub">当前账期估抄、实抄、对齐与封印状态</p>
+    <p class="sub">当前账期估抄、实抄、对齐与整单封印状态</p>
     <p v-if="err" class="msg err">{{ err }}</p>
     <div class="grid" v-if="data">
       <div class="stat">当前账期<b>{{ data.current_period }}</b></div>
@@ -19,6 +19,26 @@ onMounted(async () => {
       <div class="stat">已封印账期<b>{{ data.sealed_periods }}</b></div>
       <div class="stat">表具数<b>{{ data.meter_count }}</b></div>
       <div class="stat">未决差额<b>{{ data.pending_variances }}</b></div>
+      <div class="stat">封印工单<b>{{ data.seal_order_total }}</b></div>
+      <div class="stat">工单成功行<b>{{ data.sealed_line_total }}</b></div>
+      <div class="stat">工单失败行<b>{{ data.failed_line_total }}</b></div>
+    </div>
+    <div class="panel" v-if="data">
+      <h3>最近封印工单</h3>
+      <table v-if="data.recent_seal_orders && data.recent_seal_orders.length">
+        <thead><tr><th>工单号</th><th>口径</th><th>状态</th><th>成功</th><th>失败</th><th>账期数</th></tr></thead>
+        <tbody>
+          <tr v-for="o in data.recent_seal_orders" :key="o.order_id">
+            <td>{{ o.order_no }}</td>
+            <td>{{ o.policy }}</td>
+            <td><span class="tag" :class="o.status">{{ 标(工单状态, o.status) }}</span></td>
+            <td>{{ o.success_count }}</td>
+            <td>{{ o.failure_count }}</td>
+            <td>{{ o.period_count }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else class="sub">尚无封印工单</p>
     </div>
     <div class="panel" v-if="data">
       <h3>最近对账批</h3>

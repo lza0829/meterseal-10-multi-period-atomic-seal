@@ -16,3 +16,6 @@ data/
 # 本地环境
 .env
 .DS_Store
+
+# 本地 npm 缓存
+.npmcache/

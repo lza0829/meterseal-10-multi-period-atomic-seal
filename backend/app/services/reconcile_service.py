@@ -88,61 +88,6 @@ def run_align(period_id: str) -> dict:
         conn.close()
 
 
-def seal_period(period_id: str, batch_id: str | None = None) -> dict:
-    conn = connect()
-    try:
-        period = conn.execute(
-            "SELECT * FROM periods WHERE period_id=?", (period_id,)
-        ).fetchone()
-        if not period:
-            raise HTTPException(404, "账期不存在")
-        if period["status"] == "sealed":
-            raise HTTPException(409, "账期已封印")
-
-        if batch_id:
-            batch = conn.execute(
-                "SELECT * FROM reconcile_batches WHERE batch_id=?", (batch_id,)
-            ).fetchone()
-            if not batch or batch["period_id"] != period_id:
-                raise HTTPException(400, "对账批与账期不匹配")
-            if batch["status"] not in ("open",):
-                raise HTTPException(409, "对账批不可用")
-        else:
-            batch = conn.execute(
-                """SELECT * FROM reconcile_batches WHERE period_id=? AND status='open'
-                   ORDER BY created_at DESC LIMIT 1""",
-                (period_id,),
-            ).fetchone()
-            if not batch:
-                raise HTTPException(400, "无 open 对账批，请先对齐")
-            batch_id = batch["batch_id"]
-
-        pending = conn.execute(
-            "SELECT COUNT(*) AS c FROM variances WHERE batch_id=? AND fate='pending'",
-            (batch_id,),
-        ).fetchone()["c"]
-        # base: allow seal with pending (later topics can harden)
-        sealed_at = _now()
-        conn.execute(
-            "UPDATE periods SET status='sealed', sealed_at=?, batch_no=? WHERE period_id=?",
-            (sealed_at, batch_id, period_id),
-        )
-        conn.execute(
-            "UPDATE reconcile_batches SET status='sealed' WHERE batch_id=?",
-            (batch_id,),
-        )
-        conn.commit()
-        return {
-            "period_id": period_id,
-            "batch_id": batch_id,
-            "sealed_at": sealed_at,
-            "pending_left": pending,
-            "status": "sealed",
-        }
-    finally:
-        conn.close()
-
-
 def set_fate(variance_id: str, fate: str) -> dict:
     if fate not in ("pending", "accept_short", "accept_over", "quarantine"):
         raise HTTPException(400, "非法命运")

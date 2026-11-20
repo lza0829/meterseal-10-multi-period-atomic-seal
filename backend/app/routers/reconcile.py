@@ -12,11 +12,6 @@ class AlignIn(BaseModel):
     period_id: str
 
 
-class SealIn(BaseModel):
-    period_id: str
-    batch_id: str | None = None
-
-
 class FateIn(BaseModel):
     fate: str
 
@@ -66,11 +61,6 @@ def variances(batch_id: str | None = None, period_id: str | None = None):
 @router.post("/variances/{variance_id}/fate")
 def set_fate(variance_id: str, body: FateIn):
     return reconcile_service.set_fate(variance_id, body.fate)
-
-
-@router.post("/seal")
-def seal(body: SealIn):
-    return reconcile_service.seal_period(body.period_id, body.batch_id)
 
 
 @router.get("/periods")

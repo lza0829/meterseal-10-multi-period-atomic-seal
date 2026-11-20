@@ -32,6 +32,20 @@ def overview():
                 "SELECT * FROM reconcile_batches ORDER BY created_at DESC LIMIT 8"
             ).fetchall()
         ]
+        # 工单总览：成功封印数仍以 periods.status 派生为准（整单回滚不涨、keep 只涨成功者）
+        order_stats = conn.execute(
+            """SELECT
+                 COUNT(*) AS order_total,
+                 COALESCE(SUM(success_count),0) AS sealed_line_total,
+                 COALESCE(SUM(failure_count),0) AS failed_line_total
+               FROM seal_orders"""
+        ).fetchone()
+        recent_orders = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT * FROM seal_orders ORDER BY created_at DESC LIMIT 8"
+            ).fetchall()
+        ]
         return {
             "current_period": current,
             "open_periods": open_periods,
@@ -39,6 +53,10 @@ def overview():
             "meter_count": meters,
             "pending_variances": pending,
             "recent_batches": batches,
+            "seal_order_total": order_stats["order_total"],
+            "sealed_line_total": order_stats["sealed_line_total"],
+            "failed_line_total": order_stats["failed_line_total"],
+            "recent_seal_orders": recent_orders,
         }
     finally:
         conn.close()
